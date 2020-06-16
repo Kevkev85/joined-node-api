@@ -1,12 +1,13 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { map } from 'rxjs/operators';
-import { AuthTokenService } from '../auth-token/auth-token.service';
+import { ApiSecretsService } from 'src/marvel/api-secrets/api-secrets.service';
+import { Md5 } from 'ts-md5';
 
 @Injectable()
 export class HelperService {
   constructor(
-    private authTokenService: AuthTokenService,
     private httpService: HttpService,
+    private apiSecrets: ApiSecretsService,
   ) {}
 
   private BASE_URL = 'https://gateway.marvel.com/v1/public/';
@@ -28,16 +29,32 @@ export class HelperService {
 
   getById(urlBranch: string, relevantId: number) {
     return this.httpService
-      .get(
-        `${
-          this.BASE_URL
-        }${urlBranch}/${relevantId}${this.authTokenService.getToken()}`,
-      )
+      .get(`${this.BASE_URL}${urlBranch}/${relevantId}${this.getToken()}`)
       .pipe(map(x => x.data));
   }
 
   getCollection(urlBranch: string, fieldName: string, relevantId: number) {
-    const relevantUrl = `https://gateway.marvel.com/v1/public/${urlBranch}/${relevantId}/${fieldName}${this.authTokenService.getToken()}`;
+    const relevantUrl = `${
+      this.BASE_URL
+    }${urlBranch}/${relevantId}/${fieldName}${this.getToken()}`;
     return this.httpService.get(relevantUrl).pipe(map(x => x.data));
+  }
+
+  getAuthorizedUrl(urlBranch: string) {
+    return `${this.BASE_URL}${urlBranch}${this.getToken()}`;
+  }
+
+  getToken(): string {
+    const hashed = Md5.hashStr(
+      Date.now() + this.apiSecrets.privateKey + this.apiSecrets.publicKey,
+    );
+    return (
+      '?ts=' +
+      Date.now() +
+      '&apikey=' +
+      this.apiSecrets.publicKey +
+      '&hash=' +
+      hashed
+    );
   }
 }

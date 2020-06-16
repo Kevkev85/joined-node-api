@@ -9,11 +9,6 @@ export class ComicController {
     private httpService: HttpService,
   ) {}
 
-  @Get()
-  getAll() {
-    return this.comicService.getAll();
-  }
-
   @Get('1')
   getLine(@Query() query: ComiqQuery) {
     return this.comicService.getFilteredResults(query);

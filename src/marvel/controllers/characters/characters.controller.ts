@@ -1,14 +1,10 @@
 import { Body, Controller, Get, Query } from '@nestjs/common';
-import { AuthTokenService } from 'src/marvel/services/auth-token/auth-token.service';
 import { CharacterService } from 'src/marvel/services/character/character.service';
 import { QueryDTO } from 'src/marvel/views/queryDto';
 
 @Controller('characters')
 export class CharacterController {
-  constructor(
-    private characterService: CharacterService,
-    private authToken: AuthTokenService,
-  ) {}
+  constructor(private characterService: CharacterService) {}
 
   @Get()
   getByName(@Body() queryInput: QueryDTO) {
@@ -37,16 +33,6 @@ export class CharacterController {
     if (queryInut.id) {
       return this.characterService.getById(queryInut.id);
     }
-  }
-
-  @Get('token')
-  getToken() {
-    return this.authToken.getToken();
-  }
-
-  @Get('thumbnail')
-  getThumbnail() {
-    return `http://marvel.dl.llnw.net/wdig/marvel/u/prod/marvel/i/mg/6/20/51097abb8e306/${this.getToken()}`;
   }
 
   @Get('info')
