@@ -1,6 +1,7 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { ApiSecretsService } from 'src/marvel/api-secrets/api-secrets.service';
+import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { Md5 } from 'ts-md5';
 
 @Injectable()
@@ -11,14 +12,6 @@ export class HelperService {
   ) {}
 
   private BASE_URL = 'https://gateway.marvel.com/v1/public/';
-
-  placeLimit(originalUrl: string, limit: number): string {
-    return `${originalUrl}&limit=${limit}`;
-  }
-
-  skipOffSet(originalUrl: string, offset: number): string {
-    return `${originalUrl}&offset=${offset}`;
-  }
 
   addMainParamsQuery(intital: string, query: any): string {
     const a = query.orderBy ? `${intital}&orderBy=${query.orderBy}` : intital;
@@ -33,7 +26,9 @@ export class HelperService {
       .pipe(map(x => x.data));
   }
 
-  getCollection(urlBranch: string, fieldName: string, relevantId: number) {
+  getCollection(urlBranch: string, query: CollectionQuery) {
+    const fieldName = query.fieldName;
+    const relevantId = query.relevantId;
     const relevantUrl = `${
       this.BASE_URL
     }${urlBranch}/${relevantId}/${fieldName}${this.getToken()}`;

@@ -2,6 +2,8 @@ import { HttpException, HttpService, Injectable } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { SingleCharacterInfo } from 'src/marvel/views/characters/SingleCharacter';
+import { CharacterQueryParams } from 'src/marvel/views/queryParams/characterQueryParams';
+import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { HelperService } from '../helper/helper.service';
 
 @Injectable()
@@ -11,57 +13,31 @@ export class CharacterService {
     private httpService: HttpService,
   ) {}
 
-  private CHARACTER_URL = `https://gateway.marvel.com/v1/public/characters${this.helperService.getToken()}`;
-  private STARTSWITH_URL = `${this.CHARACTER_URL}&nameStartsWith=`;
-  private NAMES_URL = `${this.CHARACTER_URL}&name=`;
-
-  getByNameStartsWith(nameStartsWith: string) {
-    return this.covertToCharacterList(
-      this.httpService.get(`${this.STARTSWITH_URL}${nameStartsWith}`),
-    );
-  }
-
-  getNSWOffset(offset: number, nameStartsWith: string) {
-    return this.covertToCharacterList(
-      this.httpService.get(
-        this.helperService.skipOffSet(
-          `${this.STARTSWITH_URL}${nameStartsWith}`,
-          offset,
-        ),
-      ),
-    );
-  }
-
-  getByName(name: string) {
-    return this.covertToCharacterList(
-      this.httpService.get(`${this.NAMES_URL}${name}`),
-    );
-  }
+  private url_branch = 'characters';
 
   getById(charId: number) {
-    return this.httpService
-      .get(
-        `https://gateway.marvel.com/v1/public/characters/${charId}${this.helperService.getToken()}`,
-      )
-      .pipe(
-        map(x => {
-          const result = x.data;
-          const dataTosend = new SingleCharacterInfo(result);
-
-          return x.data;
-          //return dataTosend;
-        }),
-      );
+    return this.helperService
+      .getById(this.url_branch, charId)
+      .pipe(map(result => new SingleCharacterInfo(result)));
   }
 
-  getCollection(fieldName: string, charId: number) {
-    return this.httpService
-      .get(this.getListOfCollectionURL(fieldName, charId))
-      .pipe(map(x => x.data));
+  getFilteredCharacterResults(query: CharacterQueryParams) {
+    const url = this.getAllQueries(query);
+    return this.httpService.get(url).pipe(map(x => x.data));
   }
 
-  private getListOfCollectionURL(fieldName: string, charId: number) {
-    return `https://gateway.marvel.com/v1/public/characters/${charId}/${fieldName}${this.helperService.getToken()}`;
+  getCollection(query: CollectionQuery) {
+    return this.helperService.getCollection(this.url_branch, query);
+  }
+
+  private getAllQueries(query: CharacterQueryParams) {
+    let initial_url = this.helperService.getAuthorizedUrl(this.url_branch);
+    const a = query.name ? `${initial_url}&name=${query.name}` : initial_url;
+    const b = query.nameStartsWith
+      ? `${a}&nameStartsWith=${query.nameStartsWith}`
+      : a;
+
+    return this.helperService.addMainParamsQuery(b, query);
   }
 
   private covertToCharacterList(obs: Observable<any>) {

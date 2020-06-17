@@ -1,15 +1,12 @@
-import { Controller, Get, HttpService, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ComicService } from 'src/marvel/services/comic/comic.service';
 import { ComiqQuery } from 'src/marvel/views/queryParams/comicQueryParam';
 
 @Controller('comic')
 export class ComicController {
-  constructor(
-    private comicService: ComicService,
-    private httpService: HttpService,
-  ) {}
+  constructor(private comicService: ComicService) {}
 
-  @Get('1')
+  @Get('filtered')
   getLine(@Query() query: ComiqQuery) {
     return this.comicService.getFilteredResults(query);
   }
