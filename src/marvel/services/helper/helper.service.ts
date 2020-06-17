@@ -32,7 +32,9 @@ export class HelperService {
     const relevantUrl = `${
       this.BASE_URL
     }${urlBranch}/${relevantId}/${fieldName}${this.getToken()}`;
-    return this.httpService.get(relevantUrl).pipe(map(x => x.data));
+
+    const toSend = this.addMainParamsQuery(relevantUrl, query);
+    return this.httpService.get(toSend).pipe(map(x => x.data));
   }
 
   getAuthorizedUrl(urlBranch: string) {
