@@ -1,9 +1,10 @@
 import { HttpException, HttpService, Injectable } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { SingleCharacterInfo } from 'src/marvel/views/characters/SingleCharacter';
 import { CharacterQueryParams } from 'src/marvel/views/queryParams/characterQueryParams';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
+import { MultipleCharacterView } from 'src/marvel/views/resultsView/MultipleCharacterView';
+import { SingleCharacterView } from 'src/marvel/views/resultsView/SingleCharacterView';
 import { HelperService } from '../helper/helper.service';
 
 @Injectable()
@@ -18,12 +19,14 @@ export class CharacterService {
   getById(charId: number) {
     return this.helperService
       .getById(this.url_branch, charId)
-      .pipe(map(result => new SingleCharacterInfo(result)));
+      .pipe(map(result => new SingleCharacterView(result.data.results[0])));
   }
 
   getFilteredCharacterResults(query: CharacterQueryParams) {
     const url = this.getAllQueries(query);
-    return this.httpService.get(url).pipe(map(x => x.data));
+    return this.httpService
+      .get(url)
+      .pipe(map(x => new MultipleCharacterView(x.data)));
   }
 
   getCollection(query: CollectionQuery) {

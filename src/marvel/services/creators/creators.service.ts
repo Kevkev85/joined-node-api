@@ -2,6 +2,8 @@ import { HttpService, Injectable } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { CreatorQueryParams } from 'src/marvel/views/queryParams/creatorQueryParams';
+import { MultipleCreatorView } from 'src/marvel/views/resultsView/MultipleCreatorView';
+import { SingleCreatorView } from 'src/marvel/views/resultsView/SingleCreatorView';
 import { HelperService } from '../helper/helper.service';
 
 @Injectable()
@@ -14,12 +16,16 @@ export class CreatorsService {
   private url_branch = 'creators';
 
   getCreatorById(creatorId: number) {
-    return this.helperService.getById(this.url_branch, creatorId);
+    return this.helperService
+      .getById(this.url_branch, creatorId)
+      .pipe(map(result => new SingleCreatorView(result.data.results[0])));
   }
 
   getFilteredResults(query: CreatorQueryParams) {
     const url = this.getAllQueries(query);
-    return this.httpService.get(url).pipe(map(x => x.data));
+    return this.httpService
+      .get(url)
+      .pipe(map(x => new MultipleCreatorView(x.data)));
   }
 
   getCollection(query: CollectionQuery) {

@@ -8,6 +8,7 @@ export class SingleCharacterInfo {
     available?: number;
     items?: ResourseUriName[];
   };
+
   series?: {
     available: number;
     items: ResourseUriName[];

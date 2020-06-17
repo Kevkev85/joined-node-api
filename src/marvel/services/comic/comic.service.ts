@@ -1,6 +1,8 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { ComiqQuery } from 'src/marvel/views/queryParams/comicQueryParam';
+import { MultipleComicView } from 'src/marvel/views/resultsView/MultipleComicView';
+import { SingleComicView } from 'src/marvel/views/resultsView/SingleComicView';
 import { HelperService } from '../helper/helper.service';
 
 @Injectable()
@@ -14,11 +16,15 @@ export class ComicService {
 
   getFilteredResults(query: ComiqQuery) {
     const url = this.getAllQueries(query);
-    return this.httpService.get(url).pipe(map(x => x.data));
+    return this.httpService
+      .get(url)
+      .pipe(map(x => new MultipleComicView(x.data)));
   }
 
   getComicById(comicId: number) {
-    return this.helperService.getById(this.url_branch, comicId);
+    return this.helperService
+      .getById(this.url_branch, comicId)
+      .pipe(map(result => new SingleComicView(result.data.results[0])));
   }
 
   private getAllQueries(query: ComiqQuery) {

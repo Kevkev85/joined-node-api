@@ -2,6 +2,8 @@ import { HttpService, Injectable } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { SeriesQueryParams } from 'src/marvel/views/queryParams/seriesQueryParams';
+import { MultiSeriesView } from 'src/marvel/views/resultsView/MultiSeriesView';
+import { SingleSeriesView } from 'src/marvel/views/resultsView/SingleSeriesView';
 import { HelperService } from '../helper/helper.service';
 
 @Injectable()
@@ -18,12 +20,16 @@ export class SeriesService {
   }
 
   getSeriesById(seriesId: number) {
-    return this.helperService.getById(this.url_branch, seriesId);
+    return this.helperService
+      .getById(this.url_branch, seriesId)
+      .pipe(map(result => new SingleSeriesView(result.data.results[0])));
   }
 
   getFilteredSeries(query: SeriesQueryParams) {
     const url = this.getAllQueries(query);
-    return this.httpService.get(url).pipe(map(x => x.data));
+    return this.httpService
+      .get(url)
+      .pipe(map(x => new MultiSeriesView(x.data)));
   }
 
   private getAllQueries(query: SeriesQueryParams) {
