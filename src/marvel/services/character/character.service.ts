@@ -1,5 +1,5 @@
 import { HttpException, HttpService, Injectable } from '@nestjs/common';
-import { Observable, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { CharacterQueryParams } from 'src/marvel/views/queryParams/characterQueryParams';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
@@ -24,9 +24,12 @@ export class CharacterService {
 
   getFilteredCharacterResults(query: CharacterQueryParams) {
     const url = this.getAllQueries(query);
-    return this.httpService
-      .get(url)
-      .pipe(map(x => new MultipleCharacterView(x.data)));
+    return this.httpService.get(url).pipe(
+      map(x => new MultipleCharacterView(x.data)),
+      catchError(e =>
+        throwError(new HttpException(e.message, e.response.status)),
+      ),
+    );
   }
 
   getCollection(query: CollectionQuery) {
@@ -41,31 +44,5 @@ export class CharacterService {
       : a;
 
     return this.helperService.addMainParamsQuery(b, query);
-  }
-
-  private covertToCharacterList(obs: Observable<any>) {
-    return obs.pipe(
-      map(x => {
-        const all = x.data.data.results;
-        const total$ = x.data.data.total;
-        const count$ = x.data.data.count;
-        const limit$ = x.data.data.limit;
-
-        const resul = all.map(each => ({
-          id: each.id,
-          name: each.name,
-        }));
-
-        return {
-          total: total$,
-          count: count$,
-          limit: limit$,
-          result: resul,
-        };
-      }),
-      catchError(e => {
-        return throwError(new HttpException(e.message, e.response.status));
-      }),
-    );
   }
 }

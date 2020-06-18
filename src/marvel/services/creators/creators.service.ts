@@ -1,5 +1,6 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { map } from 'rxjs/operators';
+import { HttpException, HttpService, Injectable } from '@nestjs/common';
+import { throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { CreatorQueryParams } from 'src/marvel/views/queryParams/creatorQueryParams';
 import { MultipleCreatorView } from 'src/marvel/views/resultsView/MultipleCreatorView';
@@ -23,9 +24,12 @@ export class CreatorsService {
 
   getFilteredResults(query: CreatorQueryParams) {
     const url = this.getAllQueries(query);
-    return this.httpService
-      .get(url)
-      .pipe(map(x => new MultipleCreatorView(x.data)));
+    return this.httpService.get(url).pipe(
+      map(x => new MultipleCreatorView(x.data)),
+      catchError(e =>
+        throwError(new HttpException(e.message, e.response.status)),
+      ),
+    );
   }
 
   getCollection(query: CollectionQuery) {

@@ -1,7 +1,17 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { map } from 'rxjs/operators';
+import {
+  BadRequestException,
+  HttpException,
+  HttpService,
+  Injectable,
+} from '@nestjs/common';
+import { throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { ApiSecretsService } from 'src/marvel/api-secrets/api-secrets.service';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
+import { MultipleCharacterView } from 'src/marvel/views/resultsView/MultipleCharacterView';
+import { MultipleComicView } from 'src/marvel/views/resultsView/MultipleComicView';
+import { MultipleCreatorView } from 'src/marvel/views/resultsView/MultipleCreatorView';
+import { MultiSeriesView } from 'src/marvel/views/resultsView/MultiSeriesView';
 import { Md5 } from 'ts-md5';
 
 @Injectable()
@@ -23,18 +33,50 @@ export class HelperService {
   getById(urlBranch: string, relevantId: number) {
     return this.httpService
       .get(`${this.BASE_URL}${urlBranch}/${relevantId}${this.getToken()}`)
-      .pipe(map(x => x.data));
+      .pipe(
+        map(x => x.data),
+        catchError(e =>
+          throwError(new HttpException(e.message, e.response.status)),
+        ),
+      );
   }
 
   getCollection(urlBranch: string, query: CollectionQuery) {
     const fieldName = query.fieldName;
     const relevantId = query.relevantId;
+    if (!fieldName || !relevantId) {
+      throw new BadRequestException('Pick field name');
+    }
     const relevantUrl = `${
       this.BASE_URL
     }${urlBranch}/${relevantId}/${fieldName}${this.getToken()}`;
 
     const toSend = this.addMainParamsQuery(relevantUrl, query);
-    return this.httpService.get(toSend).pipe(map(x => x.data));
+    return this.httpService.get(toSend).pipe(
+      map(x => this.convertCollectionList(fieldName, x.data)),
+      catchError(e =>
+        throwError(new HttpException(e.message, e.response.status)),
+      ),
+    );
+  }
+
+  private convertCollectionList(fieldName: string, data: any) {
+    switch (fieldName) {
+      case 'comics':
+        return new MultipleComicView(data);
+
+      case 'characters':
+        return new MultipleCharacterView(data);
+
+      case 'creators':
+        return new MultipleCreatorView(data);
+
+      case 'series':
+        return new MultiSeriesView(data);
+
+      default:
+        throw new HttpException('Need to pick field name', 400);
+    }
   }
 
   getAuthorizedUrl(urlBranch: string) {

@@ -1,5 +1,6 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { map } from 'rxjs/operators';
+import { HttpException, HttpService, Injectable } from '@nestjs/common';
+import { throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { SeriesQueryParams } from 'src/marvel/views/queryParams/seriesQueryParams';
 import { MultiSeriesView } from 'src/marvel/views/resultsView/MultiSeriesView';
@@ -27,9 +28,12 @@ export class SeriesService {
 
   getFilteredSeries(query: SeriesQueryParams) {
     const url = this.getAllQueries(query);
-    return this.httpService
-      .get(url)
-      .pipe(map(x => new MultiSeriesView(x.data)));
+    return this.httpService.get(url).pipe(
+      map(x => new MultiSeriesView(x.data)),
+      catchError(e =>
+        throwError(new HttpException(e.message, e.response.status)),
+      ),
+    );
   }
 
   private getAllQueries(query: SeriesQueryParams) {

@@ -1,5 +1,7 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { map } from 'rxjs/operators';
+import { HttpException, HttpService, Injectable } from '@nestjs/common';
+import { throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { CollectionQuery } from 'src/marvel/views/queryParams/collectionQuery';
 import { ComiqQuery } from 'src/marvel/views/queryParams/comicQueryParam';
 import { MultipleComicView } from 'src/marvel/views/resultsView/MultipleComicView';
 import { SingleComicView } from 'src/marvel/views/resultsView/SingleComicView';
@@ -16,15 +18,22 @@ export class ComicService {
 
   getFilteredResults(query: ComiqQuery) {
     const url = this.getAllQueries(query);
-    return this.httpService
-      .get(url)
-      .pipe(map(x => new MultipleComicView(x.data)));
+    return this.httpService.get(url).pipe(
+      map(x => new MultipleComicView(x.data)),
+      catchError(e =>
+        throwError(new HttpException(e.message, e.response.status)),
+      ),
+    );
   }
 
   getComicById(comicId: number) {
     return this.helperService
       .getById(this.url_branch, comicId)
       .pipe(map(result => new SingleComicView(result.data.results[0])));
+  }
+
+  getCollection(query: CollectionQuery) {
+    return this.helperService.getCollection(this.url_branch, query);
   }
 
   private getAllQueries(query: ComiqQuery) {
